@@ -15,4 +15,8 @@ Telegram bot that bypasses forwarding restrictions with revenue generation featu
 - 24/7 deployment on Render.com
 
 ## Setup
-1. Create `.env` file with:
+
+### 1. Clone Repository
+```bash
+git clone https://github.com/your-username/save-restricted-bot.git
+cd save-restricted-bot
