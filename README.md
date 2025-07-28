@@ -18,5 +18,7 @@ Telegram bot that bypasses forwarding restrictions with revenue generation featu
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/your-username/save-restricted-bot.git
+git clone https://github.com/MjBots-creater/save-restricted-bot.git
 cd save-restricted-bot
+
+
