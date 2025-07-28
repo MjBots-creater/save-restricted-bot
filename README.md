@@ -17,12 +17,12 @@ Telegram bot that bypasses forwarding restrictions with revenue generation featu
 ## Setup
 
 ### 1. Clone Repository
-       ```bash
+       
        git clone https://github.com/MjBots-creater/save-restricted-bot.git
        cd save-restricted-bot
 
 ### 2. Install Dependencies
-       ```bash
+       
        pip install -r requirements.txt
 
 
@@ -30,7 +30,7 @@ Telegram bot that bypasses forwarding restrictions with revenue generation featu
       Rename .env.sample to .env
 
      Fill in your credentials:
-    ```bash
+    
     env
     TELEGRAM_TOKEN=your_bot_token
     MONGO_URI=your_mongodb_uri
@@ -43,5 +43,5 @@ Telegram bot that bypasses forwarding restrictions with revenue generation featu
 
 
 ### 4. Run the Bot
-      ```bash
+      
       python bot.py
