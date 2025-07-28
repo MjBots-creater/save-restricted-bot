@@ -1,2 +1,18 @@
-# save-restricted-bot
-Telegram bot to bypass forwarding restrictions
+# 🔓 Save Restricted Content Bot
+
+Telegram bot that bypasses forwarding restrictions with revenue generation features
+
+## Features
+- Forward restricted content to channels
+- Personal delivery option
+- Force subscription to channels/groups
+- Shortener URL verification for revenue
+- Owner controls for:
+  - Force-sub channels/groups
+  - Verification interval
+  - Broadcast messages
+- MongoDB database
+- 24/7 deployment on Render.com
+
+## Setup
+1. Create `.env` file with:
