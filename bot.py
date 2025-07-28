@@ -2,6 +2,7 @@ import os
 import logging
 import time
 import secrets
+import requests
 from datetime import datetime, timedelta
 from pymongo import MongoClient
 from telegram import (
@@ -38,7 +39,8 @@ force_sub_col = db["force_sub"]
 
 # Environment variables
 OWNER_ID = int(os.environ.get("OWNER_ID"))
-SHORTENER_URL = os.environ.get("SHORTENER_URL", "https://your-shortener.com/")
+SHORTENER_API_KEY = os.environ.get("SHORTENER_API_KEY", "")
+SHORTENER_API_URL = os.environ.get("SHORTENER_API_URL", "")
 VERIFICATION_INTERVAL = int(os.environ.get("VERIFICATION_INTERVAL", 24))  # in hours
 
 # Bot commands setup
@@ -56,6 +58,7 @@ COMMANDS = [
     BotCommand("removefchannel", "Remove force-sub channel (Owner only)"),
     BotCommand("removefgroup", "Remove force-sub group (Owner only)"),
     BotCommand("setverifyinterval", "Set verification interval (Owner only)"),
+    BotCommand("setshortener", "Set shortener API (Owner only)"),
 ]
 
 # Force subscription status
@@ -74,6 +77,27 @@ async def load_force_sub_data():
             "channels": [],
             "groups": []
         })
+
+async def generate_short_url(long_url: str) -> str:
+    """Generate short URL using the shortener API"""
+    if not SHORTENER_API_URL or not SHORTENER_API_KEY:
+        logger.warning("Shortener API not configured")
+        return long_url
+    
+    try:
+        params = {
+            "api": SHORTENER_API_KEY,
+            "url": long_url,
+            "format": "text"  # Get plain text response
+        }
+        
+        response = requests.get(SHORTENER_API_URL, params=params, timeout=10)
+        response.raise_for_status()
+        
+        return response.text.strip()
+    except Exception as e:
+        logger.error(f"Shortener API error: {e}")
+        return long_url
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -211,14 +235,18 @@ async def require_verification(update: Update, context: ContextTypes.DEFAULT_TYP
         {"$set": {"verify_token": token}}
     )
     
-    verification_url = f"{SHORTENER_URL}{token}"
+    # Create verification URL
+    verification_url = f"https://t.me/{context.bot.username}?start=verify_{token}"
+    
+    # Generate short URL using API
+    short_url = await generate_short_url(verification_url)
     
     await update.message.reply_text(
         "⏳ Your session has expired. Please verify to continue using Save Restricted Content Bot:\n\n"
-        f"🔗 [Click here to verify]({verification_url})",
+        f"🔗 [Click here to verify]({short_url})",
         parse_mode="Markdown",
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("🔓 Verify Now", url=verification_url)]
+            [InlineKeyboardButton("🔓 Verify Now", url=short_url)]
         ])
     )
     return False
@@ -462,6 +490,32 @@ async def set_verify_interval(update: Update, context: ContextTypes.DEFAULT_TYPE
     os.environ["VERIFICATION_INTERVAL"] = str(VERIFICATION_INTERVAL)
     await update.message.reply_text(f"✅ Verification interval set to {VERIFICATION_INTERVAL} hours")
 
+async def set_shortener(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != OWNER_ID:
+        await update.message.reply_text("❌ Owner only command!")
+        return
+    
+    args = context.args
+    if len(args) < 2:
+        await update.message.reply_text("Usage: /setshortener <api_url> <api_key>")
+        return
+    
+    global SHORTENER_API_URL, SHORTENER_API_KEY
+    SHORTENER_API_URL = args[0]
+    SHORTENER_API_KEY = args[1]
+    
+    # Test the API
+    test_url = "https://google.com"
+    try:
+        short_url = await generate_short_url(test_url)
+        await update.message.reply_text(
+            f"✅ Shortener API configured successfully!\n"
+            f"Test URL: {test_url}\n"
+            f"Short URL: {short_url}"
+        )
+    except Exception as e:
+        await update.message.reply_text(f"❌ Error testing shortener API: {e}")
+
 # Additional commands
 async def premium(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Check force subscription
@@ -521,6 +575,7 @@ def main():
     application.add_handler(CommandHandler("removefchannel", remove_fchannel))
     application.add_handler(CommandHandler("removefgroup", remove_fgroup))
     application.add_handler(CommandHandler("setverifyinterval", set_verify_interval))
+    application.add_handler(CommandHandler("setshortener", set_shortener))
     
     # Media handler (photos, videos, documents)
     application.add_handler(MessageHandler(
